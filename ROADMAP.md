@@ -43,6 +43,9 @@ Cuando lleguemos a cada uno, seguimos el tutorial correspondiente para la técni
 | Notas (al tocarlas) | Dissolve (disolución con borde brillante) en vez de `Destroy` directo | [Dissolve Effect in Shader Graph and URP](https://danielilett.com/2020-04-15-tut5-4-urp-dissolve/) · [video](https://www.youtube.com/watch?v=0NuesGD0msI) |
 | Entorno | Niebla baja (paneo de ruido + gradiente de altura) | [Low-lying fog effect (Paulina VFX)](https://paulinavfx.com/how-to-create-a-low-lying-fog-effect-with-unitys-shadergraph/) |
 | Panorama general | Repaso rápido de varios efectos útiles | [5 useful ShaderGraphs (Paulina VFX)](https://paulinavfx.com/5-useful-shadergraphs-for-visual-effects-and-game-development-unity-shadergraph/) |
+| Estrellas / Cometa | Glow/emisivo real (sin esto se ven planos, no brillan) | [Make ANYTHING GLOW in Unity](https://www.youtube.com/watch?v=Q4MW3T4VpxM) |
+| Cielo | Gradiente + estrellas de fondo en el skybox (complementa a `StarField`) | [Gradient skybox with distant stars](https://mikeyoung.ghost.io/creating-a-gradient-skybox-with-distant-stars-in-unitys-shader-graph/) · [video alternativo](https://www.youtube.com/watch?v=AHd5Bh5myVY) |
+| Pulso al tocar una nota (opcional) | Onda de choque radial desde la nube | [Shockwave Shader Graph](https://gamedevbill.com/shockwave-shader-graph/) |
 
 **Regla de oro:** solo Shader Graph / explícitamente URP. Nada de shaders para Built-in Render Pipeline (se ven magenta/rosa en este proyecto).
 
