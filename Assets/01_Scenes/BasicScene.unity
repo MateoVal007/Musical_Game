@@ -311,7 +311,7 @@ MonoBehaviour:
   perfectTracker: {fileID: 1553827798}
   moonVisual: {fileID: 1706835038}
   saveKey: Moon_DreamIvory
-  requiredPerfectPercentage: 0.11
+  requiredPerfectPercentage: 1
 --- !u!4 &221849900
 Transform:
   m_ObjectHideFlags: 0
@@ -1285,7 +1285,7 @@ MonoBehaviour:
   noteSpawner: {fileID: 1030425051}
   beatMap: {fileID: 11400000, guid: e07d6acb6f72a8b4e8ed9f51e76197cf, type: 2}
   audioSource: {fileID: 308074285}
-  songEndTime: 45
+  songEndTime: 205
 --- !u!4 &1553827799
 Transform:
   m_ObjectHideFlags: 0

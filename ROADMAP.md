@@ -46,6 +46,10 @@ Cuando lleguemos a cada uno, seguimos el tutorial correspondiente para la técni
 | Estrellas / Cometa | Glow/emisivo real (sin esto se ven planos, no brillan) | [Make ANYTHING GLOW in Unity](https://www.youtube.com/watch?v=Q4MW3T4VpxM) |
 | Cielo | Gradiente + estrellas de fondo en el skybox (complementa a `StarField`) | [Gradient skybox with distant stars](https://mikeyoung.ghost.io/creating-a-gradient-skybox-with-distant-stars-in-unitys-shader-graph/) · [video alternativo](https://www.youtube.com/watch?v=AHd5Bh5myVY) |
 | Pulso al tocar una nota (opcional) | Onda de choque radial desde la nube | [Shockwave Shader Graph](https://gamedevbill.com/shockwave-shader-graph/) |
+| Conos de luz en los postes (a través de la niebla) | Rápido: paquete de luz volumétrica ya hecho. De cero: Shader Graph de light shafts | 📦 [Unity-URP-Volumetric-Light (Unity 6)](https://github.com/CristianQiu/Unity-URP-Volumetric-Light) · 📖 [Your first Volumetric Fog Shader](https://www.youtube.com/watch?v=8P338C9vYEE) · [Volumetric Light Shader Graph](https://www.youtube.com/watch?v=rihJzWq7sE4) |
+| Niebla a la deriva (mechones que se mueven) | Rápido: paquete de partículas de niebla. De cero: partículas + fog en URP | 📦 [GPU-Fog-Particles](https://github.com/MirzaBeig/GPU-Fog-Particles) · 📖 [Creating Fog and Using Particles in URP](https://jaredamlin.medium.com/creating-fog-and-using-particles-in-unity3d-and-the-urp-b84c1a3a19f) |
+| Luces de los postes prendiéndose/apagándose con la música | Reusa el mismo glow + `AudioReactiveMaterial.cs` ya armado, sin tutorial nuevo | — |
+| Corrimiento de color hacia el clímax | Post-procesado: `Volume` + override `Color Adjustments`, controlado por `ClimaxIntensity` (mismo patrón que la viñeta de `CloudBoundary`) | — (no necesita tutorial, es built-in de URP) |
 
 **Regla de oro:** solo Shader Graph / explícitamente URP. Nada de shaders para Built-in Render Pipeline (se ven magenta/rosa en este proyecto).
 
