@@ -30,7 +30,7 @@ public class CloudBoundary : MonoBehaviour
     [Header("Viñeta de advertencia (opcional)")]
     [SerializeField] private Volume boundaryVolume;
     [SerializeField] private float maxVignetteIntensity = 0.4f;
-
+    public bool VignetteEnabled { get; set; } = true;
     private Vignette vignette;
 
     void Start()
@@ -49,12 +49,16 @@ public class CloudBoundary : MonoBehaviour
         Vector3 center = cloudCenter.position;
         Vector3 flatOffset = new Vector3(headPos.x - center.x, 0f, headPos.z - center.z);
 
+        //if (vignette != null)
+        //{
+        //    float t = Mathf.Clamp01(flatOffset.magnitude / radius);
+        //    vignette.intensity.value = t * maxVignetteIntensity;
+        //}
         if (vignette != null)
         {
-            float t = Mathf.Clamp01(flatOffset.magnitude / radius);
+            float t = VignetteEnabled ? Mathf.Clamp01(flatOffset.magnitude / radius) : 0f;
             vignette.intensity.value = t * maxVignetteIntensity;
         }
-
         if (flatOffset.magnitude > radius)
         {
             Vector3 clampedOffset = flatOffset.normalized * radius;
