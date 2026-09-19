@@ -25,6 +25,11 @@ public class PerfectTracker : MonoBehaviour
 
     public event Action OnSongEnded;
 
+    // Avisa cada vez que cambian los contadores, para lo que necesite
+    // reaccionar DURANTE la canción y no al final (ej. la luna, que aparece
+    // en el momento exacto en que se alcanza el porcentaje).
+    public event Action OnProgressChanged;
+
     private bool songEndedFired;
 
     void OnEnable()
@@ -52,5 +57,7 @@ public class PerfectTracker : MonoBehaviour
     {
         ResolvedCount++;
         if (isPerfect) PerfectCount++;
+
+        OnProgressChanged?.Invoke();
     }
 }

@@ -41,7 +41,14 @@ public class StarField : MonoBehaviour
         Vector3 center = skyCenter != null ? skyCenter.position : Vector3.zero;
         Vector3 starPos = center + new Vector3(circle.x, height, circle.y);
 
-        Instantiate(starPrefab, starPos, Quaternion.identity, transform);
+        GameObject starObj = Instantiate(starPrefab, starPos, Quaternion.identity, transform);
+
+        Star star = starObj.GetComponent<Star>();
+        if (star != null && StemAnalyzer.Instance != null)
+        {
+            star.AssignStem(StemAnalyzer.Instance.GetRandomStemIndex());
+        }
+
         StarCount++;
     }
 }

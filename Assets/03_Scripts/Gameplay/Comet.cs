@@ -1,10 +1,15 @@
 using UnityEngine;
+using System;
 
 // Vuela desde donde se instanció hasta un destino, y se destruye al llegar.
-// Puramente visual (partículas/trail), no tiene lógica de juego.
+// Avisa con OnArrived justo antes de destruirse (para el efecto de onda de
+// choque en la nube, ver CloudShockwave) — aparte de eso, puramente visual
+// (partículas/trail), no tiene más lógica de juego.
 public class Comet : MonoBehaviour
 {
     [SerializeField] private float flightDuration = 1f;
+
+    public event Action<Vector3> OnArrived;
 
     private Vector3 start, destination;
     private float elapsed;
@@ -27,6 +32,7 @@ public class Comet : MonoBehaviour
 
         if (t >= 1f)
         {
+            OnArrived?.Invoke(transform.position);
             Destroy(gameObject);
         }
     }

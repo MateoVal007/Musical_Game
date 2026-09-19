@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 
 // En un toque perfecto, instancia un "cometa" (partículas/trail) que vuela
 // desde donde se tocó la nota hasta la nube. Se suscribe a
@@ -12,6 +13,10 @@ public class CometEffect : MonoBehaviour
 
     [Tooltip("Hacia dónde vuela el cometa (normalmente la nube).")]
     [SerializeField] private Transform destination;
+
+    // Avisa cuando CUALQUIER cometa llega a destino — para la onda de choque
+    // en la nube (CloudShockwave) sin que Comet necesite conocerla directamente.
+    public event Action<Vector3> OnCometArrived;
 
     void OnEnable()
     {
@@ -32,6 +37,12 @@ public class CometEffect : MonoBehaviour
         if (comet != null)
         {
             comet.FlyTo(destination.position);
+            comet.OnArrived += HandleCometArrived;
         }
+    }
+
+    private void HandleCometArrived(Vector3 position)
+    {
+        OnCometArrived?.Invoke(position);
     }
 }
