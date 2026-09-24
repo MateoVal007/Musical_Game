@@ -34,6 +34,12 @@ public class NoteSpawner : MonoBehaviour
     // (quality, isPerfect, posición)
     public event Action<float, bool, Vector3> OnNoteResolved;
 
+    // Solo cuando el jugador ACERTÓ con el gesto. OnNoteResolved también se
+    // dispara cuando una nota llega sola sin que la toquen, y para cosas como
+    // la vibración eso estaría mal: vibraría sin que hicieras nada.
+    // (quality, isPerfect)
+    public event Action<float, bool> OnNoteHitByPlayer;
+
     private int nextBeatIndex;
     private readonly List<Note> activeNotes = new List<Note>();
 
@@ -99,6 +105,11 @@ public class NoteSpawner : MonoBehaviour
         {
             activeNotes.Remove(note);
             OnNoteResolved?.Invoke(quality, isPerfect, position);
+
+            if (note.WasHitByPlayer)
+            {
+                OnNoteHitByPlayer?.Invoke(quality, isPerfect);
+            }
         };
     }
 

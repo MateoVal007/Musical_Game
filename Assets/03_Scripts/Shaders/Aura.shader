@@ -39,12 +39,14 @@ Shader "Custom/Aura"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -52,6 +54,7 @@ Shader "Custom/Aura"
                 float4 positionHCS : SV_POSITION;
                 float2 offset : TEXCOORD0;
                 float glow : TEXCOORD1;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -69,6 +72,8 @@ Shader "Custom/Aura"
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
                 // El Quad de Unity va de -0.5 a 0.5: lo llevamos a -1..1.
                 float2 corner = IN.positionOS.xy * 2.0;

@@ -5,6 +5,7 @@ using UnityEngine;
 // deriva y la orientación a cámara los hace el shader Custom/Firefly; acá
 // solo se reparten las posiciones y se les da a cada una sus números
 // aleatorios (fase, velocidad, tamaño).
+[ExecuteAlways]
 [RequireComponent(typeof(MeshFilter))]
 public class FireflyFieldMeshBuilder : MonoBehaviour
 {
@@ -27,9 +28,29 @@ public class FireflyFieldMeshBuilder : MonoBehaviour
         new Vector2(-1f, 1f),
     };
 
-    void Awake()
+    void OnEnable()
     {
-        GetComponent<MeshFilter>().mesh = Build();
+        Rebuild();
+    }
+
+#if UNITY_EDITOR
+    void OnValidate()
+    {
+        // Diferido: Unity no deja tocar componentes en medio de OnValidate.
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this != null) Rebuild();
+        };
+    }
+#endif
+
+    private void Rebuild()
+    {
+        Mesh mesh = Build();
+        // DontSave: la malla se regenera sola, no tiene que quedar guardada
+        // adentro del archivo de escena inflándolo.
+        mesh.hideFlags = HideFlags.DontSave;
+        GetComponent<MeshFilter>().sharedMesh = mesh;
     }
 
     private Mesh Build()

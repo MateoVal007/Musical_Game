@@ -32,6 +32,10 @@ public class Note : MonoBehaviour
     public float TargetBeatTime { get; private set; }
     public NoteDirection Direction { get; private set; }
 
+    // Distingue "el jugador acertó el gesto" de "la nota llegó sola". El
+    // evento OnResolved se dispara igual en ambos casos.
+    public bool WasHitByPlayer { get; private set; }
+
     // Se guardan los Transform, no las posiciones: los puntos de aparición y
     // de llegada suben con la cabeza del jugador (FollowPlayerHeight) mientras
     // la nota está en vuelo. Si se guardara la posición del momento del spawn,
@@ -119,6 +123,7 @@ public class Note : MonoBehaviour
         float quality = Mathf.Clamp01(1f - diff / hitWindow);
         bool isPerfect = diff <= perfectWindow;
 
+        WasHitByPlayer = true;
         Resolve(quality, isPerfect);
         return true;
     }

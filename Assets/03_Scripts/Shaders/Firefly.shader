@@ -59,6 +59,7 @@ Shader "Custom/Firefly"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -67,6 +68,7 @@ Shader "Custom/Firefly"
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
                 float4 color : COLOR;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -74,6 +76,7 @@ Shader "Custom/Firefly"
                 float4 positionHCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 float glow : TEXCOORD1;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -98,6 +101,8 @@ Shader "Custom/Firefly"
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
                 float blinkPhase = IN.color.r * 6.28318;
                 float speedVar = 0.6 + IN.color.g * 0.8; // cada una parpadea a su ritmo

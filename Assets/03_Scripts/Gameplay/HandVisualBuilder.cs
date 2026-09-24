@@ -40,6 +40,18 @@ public class HandVisualBuilder : MonoBehaviour
     [Tooltip("Dónde arranca la baqueta respecto al controlador. Bajá la Z para tenerla más cerca de la mano, subila para alejarla.")]
     [SerializeField] private Vector3 stickOffset = new Vector3(0f, -0.015f, -0.02f);
 
+    [Header("Estela de la punta")]
+    [SerializeField] private bool includeTrail = true;
+
+    [Tooltip("Material de la estela. Usá el shader Custom/Trail: necesita leer el color del vértice para que la cola se desvanezca.")]
+    [SerializeField] private Material trailMaterial;
+
+    [Tooltip("Cuántos segundos queda dibujado el rastro. Corto: es un gesto, no una serpentina.")]
+    [SerializeField] private float trailTime = 0.3f;
+
+    [Tooltip("Ancho de la estela donde nace, en la punta de la baqueta.")]
+    [SerializeField] private float trailWidth = 0.022f;
+
     void Awake()
     {
         if (includeHand) BuildHand();
@@ -87,14 +99,50 @@ public class HandVisualBuilder : MonoBehaviour
             new Vector3(90f, 0f, 0f),
             new Vector3(stickThickness, stickLength * 0.5f, stickThickness));
 
-        CreatePart(PrimitiveType.Sphere, "StickTip",
+        GameObject tip = CreatePart(PrimitiveType.Sphere, "StickTip",
             stickTipMaterial != null ? stickTipMaterial : stickMaterial,
             stickOffset + new Vector3(0f, 0f, stickLength),
             Vector3.zero,
             Vector3.one * (stickThickness * 2.4f));
+
+        if (includeTrail) AddTrail(tip);
     }
 
-    private void CreatePart(PrimitiveType type, string name, Material material,
+    private void AddTrail(GameObject tip)
+    {
+        var trail = tip.AddComponent<TrailRenderer>();
+
+        trail.time = trailTime;
+        trail.startWidth = trailWidth;
+        trail.endWidth = 0f;
+
+        // Corto: si la distancia mínima es grande, un gesto rápido genera
+        // pocos puntos y la estela sale poligonal en vez de curva.
+        trail.minVertexDistance = 0.004f;
+        trail.numCapVertices = 4;
+
+        // La estela siempre de frente a la cámara. En VR, sin esto se ve de
+        // canto y desaparece según desde dónde la mires.
+        trail.alignment = LineAlignment.View;
+
+        trail.autodestruct = false;
+        if (trailMaterial != null) trail.sharedMaterial = trailMaterial;
+
+        // Degradado de opaco a transparente: el shader Custom/Trail lo lee
+        // del color del vértice y con eso la cola se desvanece.
+        var gradient = new Gradient();
+        gradient.SetKeys(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
+        trail.colorGradient = gradient;
+
+        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        trail.receiveShadows = false;
+        trail.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
+        trail.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
+    }
+
+    private GameObject CreatePart(PrimitiveType type, string name, Material material,
         Vector3 localPosition, Vector3 localEuler, Vector3 localScale)
     {
         GameObject part = GameObject.CreatePrimitive(type);
@@ -117,5 +165,7 @@ public class HandVisualBuilder : MonoBehaviour
         renderer.receiveShadows = false;
         renderer.lightProbeUsage = UnityEngine.Rendering.LightProbeUsage.Off;
         renderer.reflectionProbeUsage = UnityEngine.Rendering.ReflectionProbeUsage.Off;
+
+        return part;
     }
 }

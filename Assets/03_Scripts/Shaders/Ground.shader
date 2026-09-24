@@ -21,6 +21,14 @@ Shader "Custom/Ground"
         _WetLength ("Largo del reguero", Float) = 14
         _WetWidth ("Ancho del reguero", Float) = 0.7
         _WetSharpness ("Nitidez del reflejo", Range(0.5, 6)) = 2
+
+        [Header(Ondas de lluvia)]
+        _RainRippleStrength ("Fuerza de las ondas", Range(0, 3)) = 0.8
+        _RainRippleColor ("Color de las ondas", Color) = (0.7, 0.78, 1, 1)
+        _RainRippleCellSize ("Separación entre gotas", Float) = 1.8
+        _RainRippleMaxRadius ("Radio máximo de la onda", Float) = 0.5
+        _RainRippleWidth ("Grosor del anillo", Float) = 0.05
+        _RainRipplePeriod ("Segundos entre gota y gota", Float) = 1.6
     }
 
     SubShader
@@ -34,18 +42,21 @@ Shader "Custom/Ground"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
             {
                 float4 positionHCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -60,6 +71,12 @@ Shader "Custom/Ground"
                 float _WetLength;
                 float _WetWidth;
                 float _WetSharpness;
+                float _RainRippleStrength;
+                float4 _RainRippleColor;
+                float _RainRippleCellSize;
+                float _RainRippleMaxRadius;
+                float _RainRippleWidth;
+                float _RainRipplePeriod;
             CBUFFER_END
 
             // Fuentes de reflejo (farol, postes, luna). Las carga
@@ -73,6 +90,8 @@ Shader "Custom/Ground"
             Varyings vert(Attributes IN)
             {
                 Varyings OUT;
+                UNITY_SETUP_INSTANCE_ID(IN);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
                 OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
                 return OUT;
@@ -115,10 +134,51 @@ Shader "Custom/Ground"
                 return streak / (1.0 + max(lightWS.y, 0.0) * 0.18);
             }
 
+            // Una onda de lluvia por celda de una grilla invisible. La celda
+            // decide, con su propia coordenada, dónde cae la gota y en qué
+            // momento del ciclo está — así cada una va por su lado sin que
+            // nadie tenga que llevar una lista de gotas.
+            //
+            // La gota se mantiene a _RainRippleMaxRadius de los bordes de su
+            // celda, así la onda nunca se sale: con eso alcanza con mirar UNA
+            // celda por fragmento en vez de las 9 vecinas.
+            float RainRipple(float2 p, float2 gridOffset)
+            {
+                float cellSize = max(_RainRippleCellSize, 0.001);
+                float2 uv = (p + gridOffset) / cellSize;
+                float2 cell = floor(uv);
+                float2 local = frac(uv) * cellSize;
+
+                float h1 = hashNoise(float3(cell, 0.0));
+                float h2 = hashNoise(float3(cell, 7.3));
+                float h3 = hashNoise(float3(cell, 19.1));
+
+                // Margen para que la onda entre entera en la celda.
+                float margin = min(_RainRippleMaxRadius, cellSize * 0.45);
+                float2 center = float2(lerp(margin, cellSize - margin, h1),
+                                       lerp(margin, cellSize - margin, h2));
+
+                float period = max(_RainRipplePeriod, 0.01) * (0.7 + h3 * 0.6);
+                float t = frac((_Time.y + h3 * period * 10.0) / period);
+
+                float radius = t * margin;
+                float d = distance(local, center);
+
+                float ring = 1.0 - smoothstep(0.0, max(_RainRippleWidth, 0.001), abs(d - radius));
+                float fade = 1.0 - t; // se apaga a medida que se abre
+                return ring * fade * fade;
+            }
+
             half4 frag(Varyings IN) : SV_Target
             {
                 float n = hashNoise(IN.positionWS * _NoiseScale);
                 half3 color = _BaseColor.rgb * lerp(1.0, n, _NoiseStrength);
+
+                // Dos grillas desfasadas media celda: duplica la densidad y
+                // rompe el patrón regular, por el costo de una sola celda más.
+                float ripples = RainRipple(IN.positionWS.xz, 0.0)
+                              + RainRipple(IN.positionWS.xz, _RainRippleCellSize * 0.5);
+                color += _RainRippleColor.rgb * ripples * _RainRippleStrength;
 
                 float3 cameraWS = GetCameraPositionWS();
 

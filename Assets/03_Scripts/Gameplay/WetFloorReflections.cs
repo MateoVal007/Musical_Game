@@ -37,6 +37,26 @@ public class WetFloorReflections : MonoBehaviour
     private readonly Vector4[] positions = new Vector4[MaxLights];
     private readonly Vector4[] colors = new Vector4[MaxLights];
 
+    // Cacheado: buscar el Renderer y su material en cada frame, para cada
+    // fuente, es trabajo repetido que nunca cambia de respuesta.
+    private Renderer[] cachedRenderers;
+    private Material[] cachedMaterials;
+
+    void Awake()
+    {
+        cachedRenderers = new Renderer[sources.Length];
+        cachedMaterials = new Material[sources.Length];
+
+        for (int i = 0; i < sources.Length; i++)
+        {
+            ReflectionSource s = sources[i];
+            if (s == null || s.source == null || !s.readColorFromRenderer) continue;
+
+            cachedRenderers[i] = s.source.GetComponent<Renderer>();
+            if (cachedRenderers[i] != null) cachedMaterials[i] = cachedRenderers[i].material;
+        }
+    }
+
     void Update()
     {
         int count = 0;
@@ -47,7 +67,7 @@ public class WetFloorReflections : MonoBehaviour
             if (s == null || s.source == null || !s.source.gameObject.activeInHierarchy) continue;
 
             positions[count] = s.source.position;
-            colors[count] = ResolveColor(s) * s.intensity;
+            colors[count] = ResolveColor(s, i) * s.intensity;
             count++;
         }
 
@@ -56,15 +76,12 @@ public class WetFloorReflections : MonoBehaviour
         Shader.SetGlobalFloat(CountId, count);
     }
 
-    private Color ResolveColor(ReflectionSource s)
+    private Color ResolveColor(ReflectionSource s, int index)
     {
         if (!s.readColorFromRenderer) return s.color;
 
-        var renderer = s.source.GetComponent<Renderer>();
-        if (renderer == null) return s.color;
-
-        Material material = renderer.material;
-        if (!material.HasProperty("_Color")) return s.color;
+        Material material = index < cachedMaterials.Length ? cachedMaterials[index] : null;
+        if (material == null || !material.HasProperty("_Color")) return s.color;
 
         Color c = material.GetColor("_Color");
         if (material.HasProperty("_GlowIntensity"))

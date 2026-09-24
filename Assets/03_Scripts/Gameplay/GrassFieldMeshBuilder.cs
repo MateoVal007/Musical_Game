@@ -11,6 +11,7 @@ using UnityEngine;
 // necesita: .r = altura normalizada (0 raíz, 1 punta), .g = fase aleatoria
 // (para que no ventee todo sincronizado), .b = sombreado según hacia dónde
 // mira el blade, .a = variación de brillo.
+[ExecuteAlways]
 [RequireComponent(typeof(MeshFilter))]
 public class GrassFieldMeshBuilder : MonoBehaviour
 {
@@ -46,9 +47,29 @@ public class GrassFieldMeshBuilder : MonoBehaviour
 
     [SerializeField] private int randomSeed = 12345;
 
-    void Awake()
+    void OnEnable()
     {
-        GetComponent<MeshFilter>().mesh = Build();
+        Rebuild();
+    }
+
+#if UNITY_EDITOR
+    void OnValidate()
+    {
+        // Diferido: Unity no deja tocar componentes en medio de OnValidate.
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this != null) Rebuild();
+        };
+    }
+#endif
+
+    private void Rebuild()
+    {
+        Mesh mesh = Build();
+        // DontSave: la malla se regenera sola, no tiene que quedar guardada
+        // adentro del archivo de escena inflándolo.
+        mesh.hideFlags = HideFlags.DontSave;
+        GetComponent<MeshFilter>().sharedMesh = mesh;
     }
 
     private Mesh Build()

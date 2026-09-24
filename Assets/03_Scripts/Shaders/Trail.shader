@@ -1,14 +1,15 @@
-Shader "Custom/StarGlow"
+Shader "Custom/Trail"
 {
-    // Shader simple y emisivo para las estrellas. Expone Color (el tinte,
-    // que va a variar según la pista asignada) e Intensity (el brillo, que
-    // sube y baja con la energía de esa pista específica). Escrito a mano
-    // en vez de Shader Graph, pero 100% compatible con URP.
+    // Estela de la baqueta. Aditivo, sin textura.
+    //
+    // Lee el COLOR DEL VÉRTICE, que es lo que un Trail Renderer usa para
+    // pasarle su degradado a lo largo del rastro. Sin eso, la cola no se
+    // desvanece: termina de golpe. (Por eso no se puede reusar StarGlow acá,
+    // que ignora el color del vértice y fuerza el alfa a 1.)
     Properties
     {
-        _BaseMap ("Base Map (opcional, textura suave)", 2D) = "white" {}
-        _Color ("Color", Color) = (1,1,1,1)
-        _GlowIntensity ("Glow Intensity", Range(0, 10)) = 1
+        _Color ("Color", Color) = (1, 0.85, 0.54, 1)
+        _GlowIntensity ("Brillo", Range(0, 20)) = 4
     }
 
     SubShader
@@ -20,7 +21,7 @@ Shader "Custom/StarGlow"
 
         Pass
         {
-            Name "Unlit"
+            Tags { "LightMode"="UniversalForward" }
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -31,22 +32,18 @@ Shader "Custom/StarGlow"
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                float2 uv : TEXCOORD0;
+                float4 color : COLOR;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
             {
                 float4 positionHCS : SV_POSITION;
-                float2 uv : TEXCOORD0;
+                float4 color : TEXCOORD0;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            TEXTURE2D(_BaseMap);
-            SAMPLER(sampler_BaseMap);
-
             CBUFFER_START(UnityPerMaterial)
-                float4 _BaseMap_ST;
                 float4 _Color;
                 float _GlowIntensity;
             CBUFFER_END
@@ -57,18 +54,15 @@ Shader "Custom/StarGlow"
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
-                OUT.uv = TRANSFORM_TEX(IN.uv, _BaseMap);
+                OUT.color = IN.color;
                 return OUT;
             }
 
             half4 frag(Varyings IN) : SV_Target
             {
-                half4 tex = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv);
-                half3 glow = tex.rgb * _Color.rgb * _GlowIntensity;
-                // Alfa fijo en 1: con blend Additive, no necesitamos transparencia
-                // variable — si el alfa llegaba a 0 por cualquier motivo (textura,
-                // color, etc.), la estrella se volvía invisible. Así no puede pasar.
-                return half4(glow, 1);
+                float alpha = IN.color.a;
+                half3 glow = _Color.rgb * IN.color.rgb * _GlowIntensity * alpha;
+                return half4(glow, alpha);
             }
             ENDHLSL
         }
