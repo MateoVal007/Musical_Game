@@ -28,6 +28,18 @@ Shader "Custom/Flower"
         _SpeckleScale ("Escala de los puntitos", Float) = 120
         _SpeckleDensity ("Densidad de los puntitos", Range(0, 1)) = 0.1
         _SpeckleBoost ("Brillo extra de los puntitos", Range(0, 6)) = 1.2
+
+        [Header(Viento)]
+        // Conviene dejar Direction, Speed y Scale iguales a los del pasto:
+        // así la misma ráfaga recorre el pasto y las flores a la vez, en vez
+        // de parecer dos vientos distintos soplando en el mismo lugar.
+        _WindDirection ("Dirección del viento (XZ)", Vector) = (1, 0, 0.35, 0)
+        _BaseLean ("Inclinación constante", Range(0, 1)) = 0.06
+        _WindSpeed ("Velocidad de la ráfaga", Float) = 1.2
+        _WindScale ("Escala espacial de la ráfaga", Float) = 0.25
+        _WindStrength ("Fuerza de la ráfaga", Range(0, 2)) = 0.14
+        _FlutterSpeed ("Velocidad del temblor", Float) = 5
+        _FlutterStrength ("Fuerza del temblor", Range(0, 0.5)) = 0.02
     }
 
     SubShader
@@ -70,6 +82,13 @@ Shader "Custom/Flower"
                 float _SpeckleScale;
                 float _SpeckleDensity;
                 float _SpeckleBoost;
+                float4 _WindDirection;
+                float _BaseLean;
+                float _WindSpeed;
+                float _WindScale;
+                float _WindStrength;
+                float _FlutterSpeed;
+                float _FlutterStrength;
             CBUFFER_END
 
             // 0 = apagadas, 1 = destello máximo. Lo carga FlowerWave.cs.
@@ -88,9 +107,37 @@ Shader "Custom/Flower"
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
-                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
-                OUT.positionWS = TransformObjectToWorld(IN.positionOS.xyz);
-                OUT.data = float2(IN.color.r, IN.color.a);
+                float gradient = IN.color.r;
+                float isPetal = IN.color.a;
+
+                float3 positionWS = TransformObjectToWorld(IN.positionOS.xyz);
+
+                // Los puntitos se calculan con la posición SIN viento, para
+                // que queden pegados al pétalo en vez de nadar por encima
+                // mientras la flor se mueve.
+                OUT.positionWS = positionWS;
+
+                // Altura a efectos del viento. El tallo se dobla a lo largo
+                // (0 en la raíz, 1 en la cabeza), pero la cabeza de la flor es
+                // RÍGIDA: todos los vértices del pétalo se desplazan lo mismo
+                // que la punta del tallo. Si se doblaran según su propio
+                // gradiente, los pétalos se separarían del tallo.
+                float windHeight = isPetal > 0.5 ? (1.0 + gradient * 0.15) : gradient;
+                float bend = windHeight * windHeight;
+
+                float phase = IN.color.b * 6.28318;
+                float spatial = positionWS.x + positionWS.z;
+
+                float gust = sin(_Time.y * _WindSpeed + spatial * _WindScale + phase);
+                float flutter = sin(_Time.y * _FlutterSpeed + phase * 3.7) * _FlutterStrength;
+                float sway = (_BaseLean + gust * _WindStrength + flutter) * bend;
+
+                float2 windDir = normalize(_WindDirection.xz + float2(1e-5, 1e-5));
+                positionWS.xz += windDir * sway;
+                positionWS.y -= sway * sway * 0.35;
+
+                OUT.positionHCS = TransformWorldToHClip(positionWS);
+                OUT.data = float2(gradient, isPetal);
                 return OUT;
             }
 
