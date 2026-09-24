@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 // Genera una FILA de flores como un solo mesh. El orden importa: cada flor
 // guarda su posición a lo largo de la fila (0 al principio, 1 al final) en
@@ -13,13 +13,21 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]
 public class FlowerRowBuilder : MonoBehaviour
 {
-    [Header("La fila")]
+    public enum Layout { Fila, Circulo }
+
+    [Header("Disposición")]
+    [Tooltip("Fila: en línea sobre el eje X local. Círculo: en anillo alrededor del centro del objeto (para rodear la nube).")]
+    [SerializeField] private Layout layout = Layout.Fila;
+
     [SerializeField] private int flowerCount = 40;
 
-    [Tooltip("Largo de la fila sobre el eje X local.")]
+    [Tooltip("Largo de la fila sobre el eje X local. Solo se usa en modo Fila.")]
     [SerializeField] private float rowLength = 12f;
 
-    [Tooltip("Desvío aleatorio a los costados, para que no sea una línea de regla.")]
+    [Tooltip("Radio del anillo. Solo se usa en modo Círculo.")]
+    [SerializeField] private float ringRadius = 3f;
+
+    [Tooltip("Desvío aleatorio: a los costados en modo Fila, hacia adentro y afuera en modo Círculo.")]
     [SerializeField] private float rowJitter = 0.35f;
 
     [Header("La flor")]
@@ -37,6 +45,11 @@ public class FlowerRowBuilder : MonoBehaviour
     [SerializeField] private float minStemHeight = 0.5f;
     [SerializeField] private float maxStemHeight = 0.95f;
     [SerializeField] private float stemWidth = 0.012f;
+
+    [Header("Estallido de polen")]
+    [Tooltip("Motas de luz que salen disparadas al encenderse. 0 las desactiva.")]
+    [Range(0, 12)]
+    [SerializeField] private int motesPerFlower = 4;
 
     [SerializeField] private int randomSeed = 777;
 
@@ -71,11 +84,16 @@ public class FlowerRowBuilder : MonoBehaviour
         Random.InitState(randomSeed);
 
         int petals = Mathf.Max(3, petalsPerFlower);
-        int vertsPerFlower = petals * 4 + 4;  // 4 por pétalo + 4 del tallo
-        int trisPerFlower = petals * 2 + 2;
+        int motes = Mathf.Max(0, motesPerFlower);
+
+        // 4 por pétalo + 4 del tallo + 4 por mota de polen
+        int vertsPerFlower = petals * 4 + 4 + motes * 4;
+        int trisPerFlower = petals * 2 + 2 + motes * 2;
 
         var vertices = new Vector3[flowerCount * vertsPerFlower];
         var colors = new Color[flowerCount * vertsPerFlower];
+        var uv0 = new Vector4[flowerCount * vertsPerFlower];
+        var uv1 = new Vector3[flowerCount * vertsPerFlower];
         var triangles = new int[flowerCount * trisPerFlower * 3];
 
         int vi = 0, ti = 0;
@@ -86,10 +104,22 @@ public class FlowerRowBuilder : MonoBehaviour
             // Posición EN LA FILA: esto es lo que hace posible la ola.
             float rowPos = flowerCount > 1 ? f / (float)(flowerCount - 1) : 0f;
 
-            var basePos = new Vector3(
-                (rowPos - 0.5f) * rowLength,
-                0f,
-                Random.Range(-rowJitter, rowJitter));
+            Vector3 basePos;
+            if (layout == Layout.Circulo)
+            {
+                // El jitter va sobre el radio: algunas más adentro, otras más
+                // afuera, para que el anillo no se vea trazado con compás.
+                float angle = rowPos * Mathf.PI * 2f;
+                float radius = ringRadius + Random.Range(-rowJitter, rowJitter);
+                basePos = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+            }
+            else
+            {
+                basePos = new Vector3(
+                    (rowPos - 0.5f) * rowLength,
+                    0f,
+                    Random.Range(-rowJitter, rowJitter));
+            }
 
             float stemHeight = Random.Range(minStemHeight, maxStemHeight);
             float flowerRandom = Random.value;
@@ -131,16 +161,44 @@ public class FlowerRowBuilder : MonoBehaviour
                 AddVertex(vertices, colors, ref vi, tip + side * (petalWidth * 0.5f) - dir * (length * 0.25f), 1f, rowPos, flowerRandom, 1f);
                 AddQuad(triangles, ref ti, petalStart, petalStart + 1, petalStart + 2, petalStart + 3);
             }
+
+            // --- Motas de polen: quads diminutos apilados en la cabeza de la
+            // flor. En reposo tienen tamano cero (no se ven ni cuestan pixeles);
+            // al encenderse salen disparadas en la direccion que lleva cada una
+            // guardada. El shader las anima, aca solo se siembran.
+            for (int m = 0; m < motes; m++)
+            {
+                // Direccion sesgada hacia arriba: el polen sube y se abre, no
+                // se dispara para abajo contra el tallo.
+                Vector3 dir = (Random.onUnitSphere + Vector3.up * 1.1f).normalized;
+                dir *= Random.Range(0.5f, 1f);   // velocidad distinta por mota
+
+                float moteRandom = Random.value;
+
+                // Arranca repartida por la corona, no todas del mismo punto.
+                Vector3 origin = head + Random.insideUnitSphere * (minPetalLength * 0.35f);
+
+                int moteStart = vi;
+                AddMoteVertex(vertices, colors, uv0, uv1, ref vi, origin, new Vector2(-1f, -1f), moteRandom, dir, rowPos, flowerRandom);
+                AddMoteVertex(vertices, colors, uv0, uv1, ref vi, origin, new Vector2(1f, -1f), moteRandom, dir, rowPos, flowerRandom);
+                AddMoteVertex(vertices, colors, uv0, uv1, ref vi, origin, new Vector2(-1f, 1f), moteRandom, dir, rowPos, flowerRandom);
+                AddMoteVertex(vertices, colors, uv0, uv1, ref vi, origin, new Vector2(1f, 1f), moteRandom, dir, rowPos, flowerRandom);
+                AddQuad(triangles, ref ti, moteStart, moteStart + 1, moteStart + 2, moteStart + 3);
+            }
         }
 
         var mesh = new Mesh { name = "FlowerRow" };
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         mesh.SetVertices(vertices);
         mesh.SetColors(colors);
+        mesh.SetUVs(0, uv0);
+        mesh.SetUVs(1, uv1);
         mesh.SetTriangles(triangles, 0);
+        float spanX = layout == Layout.Circulo ? (ringRadius + rowJitter) * 2f : rowLength;
+        float spanZ = layout == Layout.Circulo ? (ringRadius + rowJitter) * 2f : rowJitter * 2f;
         mesh.bounds = new Bounds(
             new Vector3(0f, tallest * 0.5f, 0f),
-            new Vector3(rowLength + 2f, tallest + 1f, rowJitter * 2f + 2f));
+            new Vector3(spanX + 2f, tallest + 1f, spanZ + 2f));
 
         Random.state = previous;
         return mesh;
@@ -151,6 +209,21 @@ public class FlowerRowBuilder : MonoBehaviour
     {
         vertices[vi] = position;
         colors[vi] = new Color(gradient, rowPos, flowerRandom, isPetal);
+        vi++;
+    }
+
+    // La mota se guarda con los 4 vertices en el MISMO punto: la esquina va
+    // aparte, en la UV, y el shader la expande mirando a la camara. Asi la
+    // mota siempre queda de frente a los dos ojos.
+    // .a del color = 0.5 es la marca de "esto es una mota" (0 tallo, 1 petalo).
+    private static void AddMoteVertex(Vector3[] vertices, Color[] colors, Vector4[] uv0, Vector3[] uv1,
+        ref int vi, Vector3 position, Vector2 corner, float moteRandom, Vector3 direction,
+        float rowPos, float flowerRandom)
+    {
+        vertices[vi] = position;
+        colors[vi] = new Color(1f, rowPos, flowerRandom, 0.5f);
+        uv0[vi] = new Vector4(corner.x, corner.y, moteRandom, 0f);
+        uv1[vi] = direction;
         vi++;
     }
 
