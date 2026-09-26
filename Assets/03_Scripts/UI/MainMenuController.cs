@@ -3,12 +3,19 @@ using UnityEngine.SceneManagement;
 
 public class MainMenuController : MonoBehaviour
 {
-    [Tooltip("Nombre exacto de la escena del nivel, tal cual aparece en Build Settings.")]
-    [SerializeField] private string levelSceneName = "BasicScene";
+    [SerializeField] private GameObject mainCanvas;
+    [SerializeField] private GameObject songSelectCanvas;
 
     public void OnPlayPressed()
     {
-        SceneManager.LoadScene(levelSceneName);
+        mainCanvas.SetActive(false);
+        songSelectCanvas.SetActive(true);
+    }
+
+    public void OnBackFromSongSelect()
+    {
+        songSelectCanvas.SetActive(false);
+        mainCanvas.SetActive(true);
     }
 
     public void OnQuitPressed()
