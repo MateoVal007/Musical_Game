@@ -108,3 +108,14 @@ MonoBehaviour:
   intensityProperty: _GlowIntensity
   minIntensity: 0.2
   maxIntensity: 6
+  updateEveryNFrames: 3
+  twinkleSpeed: 2
+  twinkleStrength: 0.15
+  flareChance: 0.15
+  flareSizeMultiplier: 3.5
+  flareIdle: 0.25
+  stemFloor: 0
+  stemCeiling: 0.05
+  breathPeriod: 4
+  breathPeak: 0.85
+  mutedSaturationDrop: 0.5

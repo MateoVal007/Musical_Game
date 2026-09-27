@@ -32,6 +32,11 @@ public class MoonCollectible : MonoBehaviour
 
     private bool unlocked;
 
+    // Si se desbloqueó EN ESTA PARTIDA. Distinto de IsUnlockedByKey, que lee
+    // el guardado y sigue en true de partidas anteriores: para la pantalla
+    // final hay que saber si se la ganó recién.
+    public bool UnlockedThisRun => unlocked;
+
     void Start()
     {
         if (moonVisual != null) moonVisual.SetActive(false);
@@ -62,8 +67,10 @@ public class MoonCollectible : MonoBehaviour
     {
         unlocked = true;
 
-        PlayerPrefs.SetInt(saveKey, 1);
-        PlayerPrefs.Save();
+        // Se guarda EN EL MOMENTO y no al terminar la canción: si el jugador
+        // se saca el casco justo después de conseguirla, igual la conserva.
+        SaveSystem.GetOrCreateSong(saveKey).moonUnlocked = true;
+        SaveSystem.Save();
 
         Vector3 position = transform.position;
 
@@ -100,6 +107,6 @@ public class MoonCollectible : MonoBehaviour
     // de este script en escena.
     public static bool IsUnlockedByKey(string key)
     {
-        return PlayerPrefs.GetInt(key, 0) == 1;
+        return SaveSystem.IsMoonUnlocked(key);
     }
 }

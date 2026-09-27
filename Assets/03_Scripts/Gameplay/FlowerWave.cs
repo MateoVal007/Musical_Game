@@ -43,6 +43,12 @@ public class FlowerWave : MonoBehaviour
 
     private float lastFlashTime = float.NegativeInfinity;
 
+    // Tiempos del destello EN CURSO. Normalmente copian a los del Inspector,
+    // pero el final de la canción pide uno mucho más largo (FinaleSequence),
+    // así que el destello activo lleva los suyos propios.
+    private float activeHold;
+    private float activeFade;
+
     private int PropertyId => channel == Channel.A ? FlashAId : FlashBId;
 
     void OnEnable()
@@ -76,8 +82,21 @@ public class FlowerWave : MonoBehaviour
         Flash();
     }
 
+    // Un destello con tiempos propios, para el cierre de la canción: las
+    // flores se encienden y se quedan prendidas un buen rato antes de
+    // apagarse muy de a poco.
+    public void FlashCustom(float hold, float fade)
+    {
+        activeHold = hold;
+        activeFade = fade;
+        lastFlashTime = Time.time;
+    }
+
     private void Flash()
     {
+        activeHold = holdDuration;
+        activeFade = fadeDuration;
+
         // Un disparo nuevo reinicia el destello desde el máximo, aunque el
         // anterior siguiera apagándose.
         lastFlashTime = Time.time;
@@ -92,13 +111,13 @@ public class FlowerWave : MonoBehaviour
         {
             flash = 0f;
         }
-        else if (elapsed <= holdDuration)
+        else if (elapsed <= activeHold)
         {
             flash = 1f;
         }
         else
         {
-            float t = (elapsed - holdDuration) / Mathf.Max(fadeDuration, 0.01f);
+            float t = (elapsed - activeHold) / Mathf.Max(activeFade, 0.01f);
             flash = Mathf.Clamp01(1f - t);
             flash = flash * flash; // se apaga más rápido al principio, con cola suave
         }

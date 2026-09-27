@@ -40,6 +40,11 @@ public class NoteSpawner : MonoBehaviour
     // (quality, isPerfect)
     public event Action<float, bool> OnNoteHitByPlayer;
 
+    // Lo mismo, pero con la dirección y el lugar del golpe. Va aparte y no
+    // dentro de OnNoteHitByPlayer para no cambiarle la firma a ese evento,
+    // que ya tiene suscriptores (FlowerWave).
+    public event Action<float, bool, NoteDirection, Vector3> OnNoteHitDetailed;
+
     private int nextBeatIndex;
     private readonly List<Note> activeNotes = new List<Note>();
 
@@ -109,6 +114,7 @@ public class NoteSpawner : MonoBehaviour
             if (note.WasHitByPlayer)
             {
                 OnNoteHitByPlayer?.Invoke(quality, isPerfect);
+                OnNoteHitDetailed?.Invoke(quality, isPerfect, note.Direction, position);
             }
         };
     }

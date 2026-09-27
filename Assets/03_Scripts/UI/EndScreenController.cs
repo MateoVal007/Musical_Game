@@ -6,6 +6,10 @@ using TMPro;
 public class EndScreenController : MonoBehaviour
 {
     [SerializeField] private PerfectTracker perfectTracker;
+
+    [Tooltip("Quién decide si la luna se desbloqueó. Se le pregunta a él para que la pantalla final y la luna no puedan contradecirse.")]
+    [SerializeField] private MoonCollectible moonCollectible;
+
     [SerializeField] private GameObject endScreenCanvas;
     [SerializeField] private GameObject moonUnlockedText;
     [SerializeField] private Transform headCamera;
@@ -33,11 +37,23 @@ public class EndScreenController : MonoBehaviour
     {
         yield return new WaitForSeconds(delayBeforeShowing);
 
-        // Usamos AllPerfect directo de PerfectTracker en vez de releer PlayerPrefs,
-        // porque MoonCollectible está suscripto al mismo evento y el orden entre
-        // ambos listeners no está garantizado (podríamos leer el PlayerPref ANTES
-        // de que MoonCollectible lo haya escrito recién).
-        bool unlockedThisRun = perfectTracker.AllPerfect;
+        // Se lo preguntamos a MoonCollectible en vez de decidirlo acá. Antes
+        // esto usaba perfectTracker.AllPerfect, o sea el 100%, mientras que la
+        // luna se desbloquea al 80%: quien sacaba 85% VEÍA la luna aparecer en
+        // el cielo a mitad de canción y después la pantalla final le decía que
+        // no la había conseguido.
+        //
+        // Tampoco sirve releer PlayerPrefs: eso queda en true de partidas
+        // anteriores, y acá hace falta saber si se la ganó en ESTA.
+        bool unlockedThisRun = moonCollectible != null
+            ? moonCollectible.UnlockedThisRun
+            : perfectTracker.AllPerfect;
+
+        if (moonCollectible == null)
+        {
+            Debug.LogWarning("[EndScreenController] Falta asignar Moon Collectible: " +
+                             "la pantalla final vuelve a exigir el 100% en vez del 80%.", this);
+        }
 
         // La posición se calcula DESPUÉS de la espera, no antes: así el cartel
         // aparece frente a donde el jugador está mirando en ese momento, y no
