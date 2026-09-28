@@ -8,7 +8,7 @@ public class EndScreenController : MonoBehaviour
     [SerializeField] private PerfectTracker perfectTracker;
 
     [Tooltip("Quién decide si la luna se desbloqueó. Se le pregunta a él para que la pantalla final y la luna no puedan contradecirse.")]
-    [SerializeField] private MoonCollectible moonCollectible;
+   // [SerializeField] private MoonCollectible moonCollectible;
 
     [SerializeField] private GameObject endScreenCanvas;
     [SerializeField] private GameObject moonUnlockedText;
@@ -45,15 +45,15 @@ public class EndScreenController : MonoBehaviour
         //
         // Tampoco sirve releer PlayerPrefs: eso queda en true de partidas
         // anteriores, y acá hace falta saber si se la ganó en ESTA.
-        bool unlockedThisRun = moonCollectible != null
-            ? moonCollectible.UnlockedThisRun
-            : perfectTracker.AllPerfect;
+        //bool unlockedThisRun = moonCollectible != null
+        //    ? moonCollectible.UnlockedThisRun
+        //    : perfectTracker.AllPerfect;
 
-        if (moonCollectible == null)
-        {
-            Debug.LogWarning("[EndScreenController] Falta asignar Moon Collectible: " +
-                             "la pantalla final vuelve a exigir el 100% en vez del 80%.", this);
-        }
+        //if (moonCollectible == null)
+        //{
+        //    Debug.LogWarning("[EndScreenController] Falta asignar Moon Collectible: " +
+        //                     "la pantalla final vuelve a exigir el 100% en vez del 80%.", this);
+        //}
 
         // La posición se calcula DESPUÉS de la espera, no antes: así el cartel
         // aparece frente a donde el jugador está mirando en ese momento, y no
@@ -64,7 +64,7 @@ public class EndScreenController : MonoBehaviour
             endScreenCanvas.transform.rotation = Quaternion.LookRotation(endScreenCanvas.transform.position - headCamera.position);
         }
 
-        moonUnlockedText.SetActive(unlockedThisRun);
+       // moonUnlockedText.SetActive(unlockedThisRun);
         endScreenCanvas.SetActive(true);
     }
 
