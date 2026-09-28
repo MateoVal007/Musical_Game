@@ -1,0 +1,5 @@
+D:/UnityGames/VrProject/.utmp/RelWithDebInfo/1g2q4j3r/arm64-v8a/CMakeFiles/edit_cache.dir
+D:/UnityGames/VrProject/.utmp/RelWithDebInfo/1g2q4j3r/arm64-v8a/CMakeFiles/rebuild_cache.dir
+D:/UnityGames/VrProject/.utmp/RelWithDebInfo/1g2q4j3r/arm64-v8a/GameActivity/CMakeFiles/game.dir
+D:/UnityGames/VrProject/.utmp/RelWithDebInfo/1g2q4j3r/arm64-v8a/GameActivity/CMakeFiles/edit_cache.dir
+D:/UnityGames/VrProject/.utmp/RelWithDebInfo/1g2q4j3r/arm64-v8a/GameActivity/CMakeFiles/rebuild_cache.dir
