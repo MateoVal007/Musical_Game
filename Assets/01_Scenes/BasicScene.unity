@@ -2667,7 +2667,7 @@ MonoBehaviour:
   perfectTracker: {fileID: 1553827798}
   moonVisual: {fileID: 1706835038}
   saveKey: Moon_DreamIvory
-  requiredPerfectPercentage: 0.8
+  requiredPerfectPercentage: 0.5
   appearDuration: 2.5
 --- !u!4 &221849900
 Transform:
